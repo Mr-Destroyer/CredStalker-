@@ -324,4 +324,4 @@ This tool is provided for educational and authorized security testing purposes o
 
 **Happy hunting! 🎯**
 
-Last Updated: 2024
+Last Updated: 2026
