@@ -2,7 +2,7 @@
 """
 ╔═══════════════════════════════════════════════════════════════╗
 ║         CREDENTIAL & SENSITIVE DATA SCANNER                   ║
-║  Crawls websites and finds exposed credentials, API keys, etc. ║
+║  Crawls websites and finds exposed credentials, API keys, etc.║
 ╚═══════════════════════════════════════════════════════════════╝
 
 Author: Mr-Destroyer
