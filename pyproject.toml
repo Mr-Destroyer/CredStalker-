@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "credstalker"
+version = "2.0.0"
+description = "Crawl websites and hunt exposed credentials, API keys, tokens and secrets."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Mr-Destroyer" }]
+keywords = ["security", "osint", "bug-bounty", "credentials", "scanner", "pentest"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Security",
+]
+dependencies = [
+  "requests>=2.28.0",
+  "beautifulsoup4>=4.11.0",
+  "rich>=13.0.0",
+  "colorama>=0.4.6; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/Mr-Destroyer/CredStalker-"
+Issues = "https://github.com/Mr-Destroyer/CredStalker-/issues"
+
+[project.scripts]
+credstalker = "credstalker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

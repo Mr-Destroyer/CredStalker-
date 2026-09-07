@@ -1,178 +1,185 @@
-# 🔍 Credential & Sensitive Data Scanner
+<div align="center">
 
-A powerful Python tool that crawls websites and automatically detects exposed credentials, API keys, passwords, tokens, and other sensitive data. Perfect for security audits, bug bounty hunting, and penetration testing.
+```
+   ____              _ ____  _        _ _
+  / ___|_ __ ___  __| / ___|| |_ __ _| | | _____ _ __
+ | |   | '__/ _ \/ _` \___ \| __/ _` | | |/ / _ \ '__|
+ | |___| | |  __/ (_| |___) | || (_| | |   <  __/ |
+  \____|_|  \___|\__,_|____/ \__\__,_|_|_|\_\___|_|
+```
 
-![Python](https://img.shields.io/badge/Python-3.7+-blue?style=flat-square&logo=python)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active-success?style=flat-square)
+# CredStalker
+
+**Hunt exposed credentials before attackers do.**
+
+_Crawl a site. Find API keys, passwords, tokens, private keys, DB URLs and more — in HTML, JS and comments._
+
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/Version-2.0.0-cyan?style=for-the-badge)](./src/credstalker/__init__.py)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](./LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-magenta?style=for-the-badge)](https://github.com/Mr-Destroyer/CredStalker-/pulls)
+
+[Features](#-features) • [Detection](#-what-it-detects) • [Install](#-installation) • [Usage](#-usage) • [Screenshots](#-screenshots) • [Structure](#️-project-structure) • [Contributing](#-contributing)
+
+</div>
 
 ---
 
-## 📸 Screenshots
+## 📑 Table of Contents
 
-### 1. Scanner Banner & Crawling Process
-![Scanner Banner](./screenshot-2026-07-03_20-02-39_621954.png)
-*Shows the beautiful banner with author info and the crawling process in verbose mode*
-
-### 2. Verbose Mode - Real-time Detection
-![Verbose Crawling](./screenshot-2026-07-03_20-02-49_622338.png)
-*Demonstrates verbose mode showing each URL being crawled and sensitive data being found in real-time*
-
-### 3. Findings Summary Report
-![Findings Report](./screenshot-2026-07-03_20-02-22_620914.png)
-*Detailed findings report showing detected passwords, usernames, and obfuscated strings with their locations*
+- [✨ Features](#-features)
+- [🎯 What It Detects](#-what-it-detects)
+- [📸 Screenshots](#-screenshots)
+- [⚡ Installation](#-installation)
+- [💻 Usage](#-usage)
+- [📊 Output](#-output)
+- [🗂️ Project Structure](#️-project-structure)
+- [🛠️ How It Works](#️-how-it-works)
+- [🔒 Ethics & Scope](#-ethics--scope)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [🗺️ Roadmap](#️-roadmap)
+- [🤝 Contributing](#-contributing)
+- [👨‍💻 Author](#-author)
+- [📄 License](#-license)
 
 ---
 
 ## ✨ Features
 
-- 🔐 **Multi-Type Detection**: Finds API keys, passwords, usernames, bearer tokens, database URLs, private keys, AWS keys, emails, credit cards, and more
-- 🕷️ **Web Crawler**: Automatically crawls websites following links (with configurable depth)
-- 📄 **Deep Content Analysis**: Scans HTML, JavaScript, and HTML comments for sensitive data
-- 🎯 **Regex-Based Patterns**: Uses industry-standard patterns to detect various credential formats
-- 📊 **Detailed Reporting**: Clear, formatted output with findings organized by type
-- 💾 **Export Functionality**: Save results to JSON for further analysis
-- 🔄 **Same-Domain Crawling**: Only crawls within the target domain for scope compliance
-- 🚀 **Performance Optimized**: Efficient crawling with configurable depth limits
-- 🔇 **Verbose Mode**: Optional detailed logging for debugging
+| | Capability |
+|---|---|
+| 🕷️ | **Scoped crawler** — follows same-domain links up to `--depth`, with `--max-urls`, `--delay` and `--timeout` guards |
+| 📜 | **JS-aware** — scans inline `<script>` blocks, fetches linked `.js` files, plus HTML comments and full HTML |
+| 🔐 | **17 detectors** — generic keys plus OpenAI, GitHub, Slack, Google, Stripe, JWT, DB URLs, private keys, AWS, webhooks… |
+| 🎨 | **Rich banner + report** — color `Panel` banner and severity table, with `--no-color` / `--silent` for CI |
+| 💾 | **JSON export** — machine-readable `--export findings.json` for pipelines and bug-bounty notes |
+| 🧩 | **Clean package** — `src/credstalker/` modules, `credstalker` console script, `python -m credstalker`, legacy `credential_scanner.py` shim |
+| 🧪 | **Tested** — `pytest` pattern + crawler scope tests |
 
 ---
 
-## 🎯 Detection Capabilities
+## 🎯 What It Detects
 
-| Category | What It Detects |
-|----------|-----------------|
-| **API Keys** | API keys and tokens (20+ character variants) |
-| **Passwords** | Hardcoded passwords and password fields |
-| **Usernames** | Usernames, admin accounts, login credentials |
-| **Bearer Tokens** | Authentication tokens and bearer tokens |
-| **Database URLs** | MongoDB URIs, SQL connection strings |
-| **Private Keys** | RSA, EC, and other private key formats |
-| **AWS Keys** | AWS Access Key IDs (AKIA format) |
-| **Emails** | Email addresses across all pages |
-| **Credit Cards** | 16-digit credit card numbers (masked formats) |
-| **Webhooks** | Webhook URLs and hook endpoints |
-| **Obfuscated Strings** | Encoded/reversed strings in JavaScript |
+| Category | Severity | What It Detects |
+|---|---|---|
+| OpenAI Key | `CRITICAL` | `sk-…`, `sk-proj-…` |
+| GitHub Token | `CRITICAL` | `ghp_…`, `gho_…`, `ghu_…`, `ghs_…`, `ghr_…` |
+| Slack Token | `CRITICAL` | `xoxb-…`, `xoxp-…`, `xoxa-…`, `xoxr-…`, `xoxs-…` |
+| Stripe Key | `CRITICAL` | `sk_live_…`, `pk_live_…`, `rk_live_…` (+ test) |
+| Password | `CRITICAL` | `password/passwd/pwd = …`, hardcoded `.value == …` |
+| Database URL | `CRITICAL` | `mongodb://`, `postgres://`, `mysql://`, `redis://` + config keys |
+| Private Key | `CRITICAL` | `-----BEGIN … PRIVATE KEY-----` blocks |
+| AWS Key | `CRITICAL` | `AKIA…` + secret-pair heuristic |
+| API Key | `HIGH` | Generic `api_key / apikey / api_token` (20+ char) |
+| Google API Key | `HIGH` | `AIza…` (35 chars) |
+| JWT | `HIGH` | `eyJ…eyJ…signature` |
+| Bearer Token | `HIGH` | `Bearer …` + `token/auth = …` |
+| Credit Card | `HIGH` | 16-digit `4111-1111-1111-1111` variants |
+| Username | `MEDIUM` | `username/user/login`, `admin/root` |
+| Webhook URL | `MEDIUM` | Discord / Slack webhook URLs + generic `webhook_url` |
+| Obfuscated String | `MEDIUM` | `atob/btoa/decode/reverse(…)` tricks in JS |
+| Email | `LOW` | PII / enumeration surface |
+
+> False positives are possible (especially `username`, `email`). Triage before reporting.
 
 ---
 
-## 📋 Requirements
+## 📸 Screenshots
 
-- Python 3.7 or higher
-- Internet connection
-- Target website must be accessible
+| Banner & Crawl | Verbose Detection | Findings Report |
+|---|---|---|
+| ![Banner](./assets/screenshot-banner.png) | ![Verbose](./assets/screenshot-verbose.png) | ![Report](./assets/screenshot-report.png) |
+| New Rich `Panel` banner with version + scope line | `--verbose` shows every URL + live `[+] Found …` hits | Severity table grouped by type with URL + match |
 
 ---
 
-## 🚀 Installation
+## ⚡ Installation
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/Mr-Destroyer/credential-scanner.git
-cd credential-scanner
-```
+**Requirements:** Python 3.8+, internet access, permission to scan the target.
 
-### 2. Install Dependencies
 ```bash
-pip install -r requirements.txt
-```
+# 1. Clone
+git clone https://github.com/Mr-Destroyer/CredStalker-.git
+cd CredStalker-
 
-Or install manually:
-```bash
-pip install requests beautifulsoup4
+# 2. Install (pick one)
+pip install -r requirements.txt      # runtime only
+pip install -e ".[dev]"              # + credstalker command + pytest
+
+# 3. Verify
+credstalker --version
+# or without install:
+python -m credstalker --version
+python credential_scanner.py --version
 ```
 
 ---
 
 ## 💻 Usage
 
-### Basic Scan
 ```bash
-python credential_scanner.py http://example.com
+# Basic scan
+credstalker https://example.com
+
+# Deep + verbose + export
+credstalker https://example.com --depth 5 --verbose --export findings.json
+
+# Bug-bounty style: slow, wide, subdomain scope
+credstalker https://target.com --depth 4 --max-urls 500 --delay 0.3 \
+  --include-subdomains --timeout 10 --export bounty.json
+
+# CI / automation: no colors, no banner
+credstalker https://staging.internal --silent --no-color --export ci.json
+
+# Legacy shim still works
+python credential_scanner.py https://example.com --depth 3 --verbose
 ```
 
-### Advanced Usage
+### CLI reference
 
-#### Customize Crawl Depth
-```bash
-# Scan up to 5 levels deep (default is 3)
-python credential_scanner.py http://example.com --depth 5
 ```
+credstalker <url> [options]
 
-#### Enable Verbose Mode
-```bash
-# See detailed output of every URL being crawled
-python credential_scanner.py http://example.com --verbose
+  --depth N              Max crawl depth (default: 3)
+  --verbose              Show every URL crawled + live hits
+  --export FILE          Write findings to JSON
+  --timeout SEC          Per-request timeout (default: 8)
+  --max-urls N           Max pages + JS assets to fetch (default: 200)
+  --delay SEC            Delay between requests (default: 0)
+  --user-agent STR       Custom User-Agent
+  --include-subdomains   Crawl subdomains too (default: exact domain only)
+  --silent               Suppress console report (for scripts)
+  --no-color             Disable Rich colors
+  --version              Show version and exit
 ```
-
-#### Export Results to JSON
-```bash
-# Save findings to a JSON file for analysis
-python credential_scanner.py http://example.com --export findings.json
-```
-
-#### Combine Options
-```bash
-# Full scan with all options
-python credential_scanner.py http://example.com --depth 5 --verbose --export findings.json
-```
-
-### Command Line Arguments
-
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `<url>` | **Required.** Target website URL | - |
-| `--depth <N>` | Maximum crawl depth | 3 |
-| `--verbose` | Enable detailed logging | Disabled |
-| `--export <filename>` | Export findings to JSON file | None |
 
 ---
 
-## 📊 Output Examples
+## 📊 Output
 
-### Console Output
+**Console (Rich table):**
+
 ```
-════════════════════════════════════════════════════════
-🔍 Starting scan on: http://example.com
-════════════════════════════════════════════════════════
-
-════════════════════════════════════════════════════════
 🚨 FINDINGS SUMMARY
-════════════════════════════════════════════════════════
-
-📌 API_KEY (2 found):
-   ────────────────────────────────────────────────────
-
-   [1] URL: http://example.com/admin/config.js
-       Source: JavaScript
-       Match: api_key = "sk_live_1234567890abcdef"
-
-   [2] URL: http://example.com/api/settings
-       Source: HTML
-       Match: apikey: "AIzaSyD1234567890abcdef"
-
-════════════════════════════════════════════════════════
+┏━━━┳━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Type       ┃ Severity ┃ Source     ┃ URL             ┃ Match            ┃
+┡━━━╇━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ 1 │ API Key    │ HIGH     │ JavaScript │ …/static/app.js │ api_key = "sk…"  │
+│ 2 │ Password   │ CRITICAL │ HTML       │ …/login         │ password = "…"   │
+└───┴────────────┴──────────┴────────────┴─────────────────┴──────────────────┘
 📊 Total findings: 2
-════════════════════════════════════════════════════════
 ```
 
-### JSON Export Format
+**JSON (`--export findings.json`, see [`examples/sample_findings.json`](./examples/sample_findings.json)):**
+
 ```json
 {
   "api_key": [
     {
-      "url": "http://example.com/admin/config.js",
+      "url": "http://example.com/static/config.js",
       "type": "api_key",
       "match": "api_key = \"sk_live_1234567890abcdef\"",
       "source": "JavaScript"
-    }
-  ],
-  "password": [
-    {
-      "url": "http://example.com/login",
-      "type": "password",
-      "match": "password = \"SecurePass123\"",
-      "source": "HTML"
     }
   ]
 }
@@ -180,112 +187,85 @@ python credential_scanner.py http://example.com --depth 5 --verbose --export fin
 
 ---
 
-## 🔒 Security & Ethical Considerations
+## 🗂️ Project Structure
 
-⚠️ **IMPORTANT**: This tool should ONLY be used on websites you own or have explicit permission to test.
-
-- **Authorized Testing Only**: Only scan websites you have permission to test
-- **Responsible Disclosure**: If you find real credentials, report them responsibly to the website owner
-- **No Malicious Use**: Do not use this tool for unauthorized access or illegal purposes
-- **Data Handling**: Be careful with exported findings - they may contain sensitive information
+```
+CredStalker-/
+├── src/credstalker/        # installable package
+│   ├── __init__.py         # version + exports
+│   ├── __main__.py         # python -m credstalker
+│   ├── banner.py           # Rich banner + ANSI fallback
+│   ├── patterns.py         # PATTERNS + PATTERN_META (severity)
+│   ├── scanner.py          # CredentialScanner (crawl + detect)
+│   ├── reporter.py         # Rich table / plain report
+│   └── cli.py              # argparse entry point
+├── tests/
+│   ├── test_patterns.py    # every detector fires on a sample
+│   └── test_scanner.py     # scope + dedup + export (mocked HTTP)
+├── assets/                 # screenshots
+├── examples/
+│   └── sample_findings.json
+├── credential_scanner.py   # legacy shim → credstalker.cli:main
+├── pyproject.toml          # build + `credstalker` script
+├── requirements.txt
+├── LICENSE
+└── README.md
+```
 
 ---
 
 ## 🛠️ How It Works
 
-1. **Initialization**: Scanner creates a session with a spoofed user agent
-2. **Crawling**: Starts from the target URL and follows internal links up to max depth
-3. **Content Analysis**: 
-   - Extracts JavaScript from `<script>` tags
-   - Scans HTML comments
-   - Analyzes all HTML content
-4. **Pattern Matching**: Uses regex patterns to identify sensitive data types
-5. **Reporting**: Compiles findings and displays them in a formatted report
-6. **Export** (Optional): Saves results to JSON for further analysis
+1. **Init** — session with browser-like UA, pre-compiled regexes, scope = target domain (or + subdomains).
+2. **Crawl** — BFS from seed URL up to `--depth` / `--max-urls`; same-scope `<a href>` links are followed.
+3. **JS surface** — inline `<script>` blocks are scanned; linked `script[src]` files are fetched and scanned without costing depth.
+4. **Match** — content (JS → comments → full HTML) is checked against all patterns with per-URL dedup.
+5. **Report** — Rich severity table (or plain fallback) + optional JSON export.
 
 ---
 
-## 📝 Examples
+## 🔒 Ethics & Scope
 
-### Example 1: Basic Website Scan
-```bash
-$ python credential_scanner.py http://vulnerable-app.local
-```
+> ⚠️ **Authorized testing only.** Scan only sites you own or have explicit written permission to test.
 
-### Example 2: Deep Penetration Testing Scan
-```bash
-$ python credential_scanner.py http://target.com --depth 5 --verbose --export pentest_results.json
-```
-
-### Example 3: Quick Check with Export
-```bash
-$ python credential_scanner.py https://api.example.com --export api_findings.json
-```
+- Default scope is **exact domain only** — use `--include-subdomains` deliberately.
+- Respect `robots.txt`, rate limits and program rules; use `--delay` on shared targets.
+- Handle exports as secrets — `findings.json` can contain live credentials. Delete or vault it.
+- Disclose responsibly to the asset owner. Never use findings for unauthorized access.
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Issue: SSL Certificate Verification Errors
-**Solution**: The tool disables SSL verification by default. If you need to enable it, modify the `verify=False` parameter in the `_crawl_url` method.
-
-### Issue: Timeout Errors
-**Solution**: Increase the timeout value or reduce the crawl depth:
-```bash
-python credential_scanner.py http://example.com --depth 2
-```
-
-### Issue: No Results Found
-**Solution**: 
-- Try increasing the depth: `--depth 5`
-- Enable verbose mode to see crawling progress: `--verbose`
-- Ensure the target has JavaScript or sensitive content
-
-### Issue: ModuleNotFoundError
-**Solution**: Install required dependencies:
-```bash
-pip install requests beautifulsoup4
-```
+| Symptom | Fix |
+|---|---|
+| `ModuleNotFoundError` | `pip install -r requirements.txt` or `pip install -e .` |
+| `credstalker: command not found` | Use `python -m credstalker …` or reinstall with `pip install -e .` |
+| SSL / timeout errors | Raise `--timeout 15`, lower `--depth 2`, add `--delay 0.5` |
+| No results | Try `--depth 5 --verbose`, check the target actually serves JS / comments |
+| Too many requests | Lower `--max-urls 50`, add `--delay`, avoid `--include-subdomains` initially |
+| Colors broken in CI | Add `--no-color --silent` |
 
 ---
 
-## 📦 Requirements File
+## 🗺️ Roadmap
 
-**requirements.txt**
-```
-requests>=2.28.0
-beautifulsoup4>=4.11.0
-```
+- [ ] HTML report (`--format html`) + SARIF for GitHub code scanning
+- [ ] JS entropy detector for unknown secret shapes
+- [ ] `robots.txt` / `sitemap.xml` seeding + `--exclude` regex
+- [ ] Concurrent fetching with per-host throttling
 
----
-
-## 🗂️ Project Structure
-
-```
-credential-scanner/
-├── credential_scanner.py      # Main scanner script
-├── requirements.txt           # Python dependencies
-├── README.md                  # This file
-└── findings.json              # Sample output (generated)
-```
+PRs and issues welcome.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! To contribute:
+1. Fork → `git checkout -b feature/amazing-feature`
+2. `pip install -e ".[dev]"` → `pytest -q`
+3. Commit → push → open a PR
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+Please keep new detectors in `src/credstalker/patterns.py` with a sample in `tests/test_patterns.py`.
 
 ---
 
@@ -300,28 +280,18 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-## ⚠️ Disclaimer
+## 📄 License
 
-This tool is provided for educational and authorized security testing purposes only. Users are responsible for ensuring they have proper authorization before scanning any website. Unauthorized access to computer systems is illegal. The author is not responsible for misuse of this tool.
+MIT — see [LICENSE](./LICENSE).
 
----
-
-## 📞 Support
-
-- Found a bug? Open an issue on GitHub
-- Have questions? Check the troubleshooting section above
-- Want to suggest a feature? Create a GitHub issue
+> **Disclaimer:** for educational and authorized security testing only. You are responsible for having proper authorization. Unauthorized access is illegal. The author is not responsible for misuse.
 
 ---
 
-## 🔗 Related Resources
-
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Bug Bounty Hunting Guide](https://www.bugcrowd.com/)
-- [Penetration Testing Guide](https://www.kali.org/)
-
----
+<div align="center">
 
 **Happy hunting! 🎯**
 
-Last Updated: 2026
+⭐ Star the repo if CredStalker helped your audit.
+
+</div>
